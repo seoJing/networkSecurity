@@ -1,0 +1,13 @@
+# Replace @seoJing with actual platform and team member usernames after onboarding.
+/.harness/ @seoJing
+/AGENTS.md @seoJing
+/CLAUDE.md @seoJing
+/.github/ @seoJing
+/infra/ @seoJing
+/compose.yaml @seoJing
+/compose.lab.yaml @seoJing
+/apps/server/src/auth/ @seoJing
+/apps/server/src/routes/ @seoJing
+/apps/server/src/security/policies/ @seoJing
+/experiments/attacker/ @seoJing
+/experiments/defender/ @seoJing

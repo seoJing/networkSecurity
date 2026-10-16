@@ -1,0 +1,6 @@
+# Lab-only runtime marker. All externally reachable bindings are set by .env.lab.
+# This file deliberately does not expose backend or PostgreSQL ports.
+services:
+  backend:
+    environment:
+      LAB_MODE: "true"

@@ -1,0 +1,24 @@
+import type { RequestHandler } from 'express';
+import { activeSessionPolicy } from '../security/policies/activePolicy';
+
+export const requireAuth: RequestHandler = async (req, res, next) => {
+  const userId = req.session.userId;
+  if (!userId) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  try {
+    const accepted = await activeSessionPolicy.validate({
+      userId,
+      sourceIp: req.ip || '',
+      userAgent: req.get('user-agent') || '',
+    });
+    if (!accepted) {
+      res.status(403).json({ error: 'Session policy rejected request' });
+      return;
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};

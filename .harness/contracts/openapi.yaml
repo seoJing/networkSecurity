@@ -1,0 +1,73 @@
+openapi: 3.0.3
+info:
+  title: Mini Office Lab API
+  version: 0.1.0
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      summary: Database connectivity
+      responses:
+        '200': { description: OK }
+  /auth/login:
+    post:
+      summary: Log in and create a server-side session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200': { description: Authenticated user }
+        '401': { description: Invalid credentials }
+  /auth/logout:
+    post:
+      summary: Destroy session
+      responses:
+        '204': { description: Logged out }
+  /auth/me:
+    get:
+      summary: Current user
+      responses:
+        '200': { description: Current user }
+        '401': { description: Not authenticated }
+  /documents:
+    get:
+      summary: List the current user's documents
+      responses:
+        '200': { description: Owned documents }
+        '401': { description: Not authenticated }
+  /documents/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    get:
+      summary: Get an owned document
+      responses:
+        '200': { description: Document }
+        '401': { description: Not authenticated }
+        '404': { description: Not found or not owned }
+    patch:
+      summary: Update an owned document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title: { type: string, maxLength: 120 }
+                content: { type: string, maxLength: 10000 }
+      responses:
+        '200': { description: Updated document }
+        '401': { description: Not authenticated }
+        '404': { description: Not found or not owned }

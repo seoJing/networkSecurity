@@ -1,0 +1,72 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+
+  scope:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check branch role prefix (advisory)
+        shell: bash
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          if [[ "$BRANCH" == attacker/* ]]; then
+            node scripts/check-scope.mjs attacker "${{ github.event.pull_request.base.sha }}" HEAD
+          elif [[ "$BRANCH" == defender/* ]]; then
+            node scripts/check-scope.mjs defender "${{ github.event.pull_request.base.sha }}" HEAD
+          else
+            echo 'No attacker/defender scope gate for this branch; human review required.'
+          fi
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare isolated CI-only environment
+        run: |
+          cp .env.example .env
+          sed -i "s/^SESSION_SECRET=.*/SESSION_SECRET=$(openssl rand -hex 32)/" .env
+          sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$(openssl rand -hex 16)/" .env
+          echo "SEED_PASSWORD=$(grep '^SEED_PASSWORD=' .env | cut -d= -f2-)" >> "$GITHUB_ENV"
+      - name: Build and start services
+        run: docker compose up -d --build --wait
+      - name: Normal-user smoke test
+        run: bash scripts/smoke.sh
+      - name: Collect service diagnostics on failure
+        if: failure()
+        run: docker compose logs --tail=100
+      - name: Stop services
+        if: always()
+        run: docker compose down
