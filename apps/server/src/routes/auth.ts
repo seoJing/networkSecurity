@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { compare } from 'bcryptjs';
 import { pool } from '../db';
 import { requireAuth } from '../middleware/requireAuth';
+import { seedLoginToken, clearLoginToken } from '../security/policies/tokenRotation';
 
 export const authRouter = Router();
 
@@ -28,6 +29,8 @@ authRouter.post('/login', async (req, res, next) => {
       // Defender contract extension: bind the session to the client it was issued to.
       req.session.boundIp = req.ip;
       req.session.boundUa = req.get('user-agent') || '';
+      // R6: issue the first rotation token (only when token rotation is the active round).
+      seedLoginToken(req, res);
       req.session.save((saveError) => {
         if (saveError) return next(saveError);
         res.json({ id: user.id, username: user.username, displayName: user.display_name });
@@ -42,6 +45,7 @@ authRouter.post('/logout', (req, res, next) => {
   req.session.destroy((error) => {
     if (error) return next(error);
     res.clearCookie('mini-office.sid', { path: '/', httpOnly: true, sameSite: 'lax', secure: false });
+    clearLoginToken(res);
     res.status(204).end();
   });
 });

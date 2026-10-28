@@ -18,7 +18,7 @@
 | `off` (기본) | R0 / R1 | 방어 없음 (userId만 확인) |
 | `ip` | R2 | IP 바인딩 검증 |
 | `ua` | R4 | UA 핑거프린트 |
-| `token` | R6 | (예정) 토큰 회전 + 재사용 탐지 |
+| `token` | R6 | 토큰 회전 + 재사용 탐지 |
 | `combined` | R7 | (예정) IP+UA+토큰 OR 결합 |
 
 ---
@@ -82,7 +82,32 @@ curl -b "mini-office.sid=<탈취값>" -H "User-Agent: <피해자UA>" .../api/aut
 
 ---
 
-## R6 — 토큰 회전 + 재사용 탐지 ⏳ 예정
+## R6 — 토큰 회전 + 재사용 탐지 ✅ 구현됨
+
+파일: `apps/server/src/security/policies/tokenRotation.ts` (+ 계약 확장: `express-session.d.ts`, `auth.ts`, `requireAuth.ts`)
+
+R2/R4와 달리 `validate()` true/false로 안 됨 → **쿠키 재발급·세션 무효화·경보**가 필요해서 **미들웨어**로 구현.
+
+- 로직:
+  - 매 요청마다 토큰(`mo-rt` 쿠키)을 새로 발급하고 직전 토큰은 `retired`(폐기목록)에 넣음
+  - 보낸 토큰 == 현재 → 정상, 회전 | 보낸 토큰 ∈ 폐기목록 → **탈취 탐지**(세션 destroy + 401 + 경보 로그)
+- D3FEND: Credential Rotation + 재사용 분석 계열.
+- 막는 것: 공격자가 IP·UA를 다 베껴도(R5 통과) **훔친 토큰을 재사용하는 순간 폐기 충돌로 탐지**.
+- 한계(정직하게): 공격자가 피해자보다 **먼저** 쓰면 그 1회는 통과(이후 충돌에서 탐지). 즉시 차단이 아니라 **탐지+축출**. 근본 예방은 HTTPS.
+- 배선: 로그인 시 첫 토큰 발급(`seedLoginToken`), 로그아웃 시 토큰쿠키 정리(`clearLoginToken`), 인증 통과 후 `tokenRotationGuard` 실행.
+
+### 작동/시연법
+```bash
+DEFENSE_POLICY=token docker compose up -d --build
+# 피해자 로그인 → mo-rt 쿠키 받음 → 요청마다 회전
+# 공격자가 훔친 (옛) 토큰 재사용 → 401 "token reuse detected" + 서버 로그에 session-theft-detected
+```
+
+### ⚠️ 측정 시 주의 (smoke.sh)
+`scripts/smoke.sh`는 로그인에만 `-c`(쿠키 저장)를 쓰고 이후 요청엔 `-b`(읽기)만 써서 **회전된 토큰을 저장하지 않음** → token 모드에선 두 번째 요청이 옛 토큰을 보내 "재사용"으로 걸릴 수 있음. 이건 테스트 클라이언트 특성이지 실제 브라우저(쿠키 자동 갱신)와는 다름. token 모드 정상 회귀 측정은 **매 요청 `-c`로 쿠키를 갱신하는 별도 스크립트**(`tests/defense/`)로 돌릴 것. (측정 단계에서 처리 예정)
+
+---
+
 ## R7 — 복합 (OR 결합) ⏳ 예정
 
 ---

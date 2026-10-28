@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 import { activeSessionPolicy } from '../security/policies/activePolicy';
+import { tokenRotationGuard } from '../security/policies/tokenRotation';
 
 export const requireAuth: RequestHandler = async (req, res, next) => {
   const userId = req.session.userId;
@@ -19,7 +20,8 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       res.status(403).json({ error: 'Session policy rejected request' });
       return;
     }
-    next();
+    // R6: rotate the per-request token (no-op in rounds where rotation is off).
+    tokenRotationGuard(req, res, next);
   } catch (error) {
     next(error);
   }
