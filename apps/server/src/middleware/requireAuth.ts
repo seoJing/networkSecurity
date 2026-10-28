@@ -12,6 +12,8 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       userId,
       sourceIp: req.ip || '',
       userAgent: req.get('user-agent') || '',
+      boundIp: req.session.boundIp,
+      boundUa: req.session.boundUa,
     });
     if (!accepted) {
       res.status(403).json({ error: 'Session policy rejected request' });

@@ -3,6 +3,9 @@ export interface SessionContext {
   userId: number;
   sourceIp: string;
   userAgent: string;
+  // Baseline captured at login (defender contract extension). Undefined for sessions issued before it.
+  boundIp?: string;
+  boundUa?: string;
 }
 
 export interface SessionPolicy {

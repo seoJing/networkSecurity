@@ -25,6 +25,9 @@ authRouter.post('/login', async (req, res, next) => {
     req.session.regenerate((error) => {
       if (error) return next(error);
       req.session.userId = user.id;
+      // Defender contract extension: bind the session to the client it was issued to.
+      req.session.boundIp = req.ip;
+      req.session.boundUa = req.get('user-agent') || '';
       req.session.save((saveError) => {
         if (saveError) return next(saveError);
         res.json({ id: user.id, username: user.username, displayName: user.display_name });
