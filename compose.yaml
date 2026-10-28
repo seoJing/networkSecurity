@@ -29,6 +29,8 @@ services:
       PGDATABASE: ${POSTGRES_DB}
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET}
       SEED_PASSWORD: ${SEED_PASSWORD:?set SEED_PASSWORD}
+      # Defender round toggle: off | ip | ua | token | combined (default off).
+      DEFENSE_POLICY: ${DEFENSE_POLICY:-off}
     depends_on:
       db:
         condition: service_healthy
