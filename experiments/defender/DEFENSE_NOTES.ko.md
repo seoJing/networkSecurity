@@ -19,7 +19,7 @@
 | `ip` | R2 | IP 바인딩 검증 |
 | `ua` | R4 | UA 핑거프린트 |
 | `token` | R6 | 토큰 회전 + 재사용 탐지 |
-| `combined` | R7 | (예정) IP+UA+토큰 OR 결합 |
+| `combined` | R7 | IP+UA+토큰 모두 ON (하나라도 걸리면 차단) |
 
 ---
 
@@ -108,7 +108,26 @@ DEFENSE_POLICY=token docker compose up -d --build
 
 ---
 
-## R7 — 복합 (OR 결합) ⏳ 예정
+## R7 — 복합 방어 ✅ 구현됨
+
+파일: `apps/server/src/security/policies/combinedPolicy.ts`
+
+- 새 로직이 아니라 기존 걸 **조립**: `ipBindingPolicy.validate(ctx) && uaBindingPolicy.validate(ctx)` (IP 통과 AND UA 통과).
+- R6(토큰 회전)은 `combined` 모드에서 `tokenRotationGuard`가 자동으로 함께 돎 → 최종 상태 = **IP + UA + 토큰 회전 모두 ON**.
+- 결합 규칙: "통과하려면 셋 다 통과(AND)" = "하나라도 걸리면 차단(OR)" — 같은 말.
+- 각 단독 방어의 구멍을 서로 메움:
+  - 다른 IP → IP에서 차단
+  - UA 안 베낌 → UA에서 차단
+  - IP·UA 다 복제(R5) → validate는 통과하지만 **토큰 재사용에서 탐지**(최후 방어선)
+- 메시지: 단일 조건은 각각 뚫려도, 겹치면 성공률 급락 = Defense-in-Depth. 근본 예방은 HTTPS(R8).
+
+### 작동/시연법
+```bash
+DEFENSE_POLICY=combined docker compose up -d --build
+```
+
+### 검증(런타임)
+`DEFENSE_POLICY=combined`에서: 정상=통과 / 다른IP=차단 / UA불일치=차단 / R5(IP·UA복제)=validate통과→토큰가드가 탐지.
 
 ---
 
