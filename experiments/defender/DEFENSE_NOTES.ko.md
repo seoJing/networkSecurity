@@ -17,7 +17,7 @@
 |---|---|---|
 | `off` (기본) | R0 / R1 | 방어 없음 (userId만 확인) |
 | `ip` | R2 | IP 바인딩 검증 |
-| `ua` | R4 | (예정) UA 핑거프린트 |
+| `ua` | R4 | UA 핑거프린트 |
 | `token` | R6 | (예정) 토큰 회전 + 재사용 탐지 |
 | `combined` | R7 | (예정) IP+UA+토큰 OR 결합 |
 
@@ -61,7 +61,27 @@ DEFENSE_POLICY=ip    docker compose up -d --build
 
 ---
 
-## R4 — UA 핑거프린트 ⏳ 예정
+## R4 — UA 핑거프린트 ✅ 구현됨
+
+파일: `apps/server/src/security/policies/uaBindingPolicy.ts`
+
+- 로직: `발급 UA(boundUa) !== 요청 UA(userAgent)` 이면 거부 → 403.
+- D3FEND: Session/Credential 상관분석 계열.
+- 막는 것: 공격자가 **쿠키만 복사**해서 다른 클라이언트(curl 등)로 재사용 → UA 불일치로 차단.
+- IP와 독립: R4에서는 IP를 끄고 UA 단독으로 켜서, IP와 무관하게 막히는 걸 보여줌.
+- 한계: 공격자가 스니핑으로 본 피해자 UA를 복제(`curl -H "User-Agent: <피해자UA>"`)하면 통과 = **R5 우회** → R6(토큰)으로 보완.
+- 오탐 주의: UA는 브라우저 업데이트로도 바뀔 수 있음. 실습망은 고정이라 데모에선 안전.
+
+### 작동/시연법
+```bash
+# R4 (UA 검증 ON): 쿠키만 복사하면 UA 불일치로 403
+DEFENSE_POLICY=ua    docker compose up -d --build
+# R5 (우회): 공격자가 피해자 UA까지 복제하면 통과 → 단일 조건의 한계
+curl -b "mini-office.sid=<탈취값>" -H "User-Agent: <피해자UA>" .../api/auth/me
+```
+
+---
+
 ## R6 — 토큰 회전 + 재사용 탐지 ⏳ 예정
 ## R7 — 복합 (OR 결합) ⏳ 예정
 
