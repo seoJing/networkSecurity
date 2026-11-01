@@ -7,4 +7,4 @@ Read the repository root `AGENTS.md` and `.harness/contracts/session.md` first.
 - The attacker must never modify this server tree.
 - Keep API paths and response shapes consistent with `.harness/contracts/openapi.yaml`.
 - No raw session IDs, cookies, password hashes, or HTTP request bodies in logs.
-- The isolated lab transport may be HTTP; do not silently expose it outside the Host-only network.
+- External lab traffic terminates HTTPS at Nginx; only the private Nginx-to-Express hop may use HTTP. Do not publish the backend outside the Docker network.

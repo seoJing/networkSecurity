@@ -4,7 +4,7 @@
 
 **Shared platform:** Mini Office with two synthetic users, normal login/logout, an authenticated dashboard, user-owned documents, server-stored cookie sessions, and sanitized request records. Platform developers do NOT implement attack or defense outcomes.
 
-**Network boundary:** Host-only Server/Victim/Attacker VMs. Only the frontend HTTP port is published on the server's Host-only interface during exercises. Do not use bridging to shared LANs or production networks. HTTP is for scoped transport-security comparison; never treat it as production-ready.
+**Network boundary:** Host-only Server/Victim/Attacker VMs. Only the frontend HTTPS port is published on the server's Host-only interface during exercises. TLS terminates at Nginx; Nginx-to-Express and Express-to-PostgreSQL traffic remains on the private Docker network. Do not use bridging to shared LANs or production networks.
 
 **Roles:** platform builds shared services; attacker runs the approved isolated experiment from a distinct VM; defender adds checks within a narrow server policy extension point. A human reviewer approves changes to shared contracts and success criteria.
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { compare } from 'bcryptjs';
 import { pool } from '../db';
 import { requireAuth } from '../middleware/requireAuth';
+import { clearSessionCookieOptions, sessionCookieName } from '../sessionCookie';
 
 export const authRouter = Router();
 
@@ -38,7 +39,7 @@ authRouter.post('/login', async (req, res, next) => {
 authRouter.post('/logout', (req, res, next) => {
   req.session.destroy((error) => {
     if (error) return next(error);
-    res.clearCookie('mini-office.sid', { path: '/', httpOnly: true, sameSite: 'lax', secure: false });
+    res.clearCookie(sessionCookieName, clearSessionCookieOptions);
     res.status(204).end();
   });
 });
