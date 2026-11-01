@@ -6,6 +6,7 @@ import { seedDemoData } from './seed';
 import { requestLogger } from './middleware/requestLogger';
 import { authRouter } from './routes/auth';
 import { documentsRouter } from './routes/documents';
+import { sessionCookieName, sessionCookieOptions } from './sessionCookie';
 
 async function main(): Promise<void> {
   if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
@@ -21,13 +22,13 @@ async function main(): Promise<void> {
 
   const PgSessionStore = connectPgSimple(session);
   app.use(session({
-    name: 'mini-office.sid',
+    name: sessionCookieName,
     store: new PgSessionStore({ pool, createTableIfMissing: true }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     rolling: false,
-    cookie: { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 30 * 60 * 1000, path: '/' },
+    cookie: sessionCookieOptions,
   }));
   app.use(requestLogger);
 

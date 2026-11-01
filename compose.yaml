@@ -28,6 +28,7 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: ${POSTGRES_DB}
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       SEED_PASSWORD: ${SEED_PASSWORD:?set SEED_PASSWORD}
     depends_on:
       db:
@@ -43,7 +44,16 @@ services:
     build: ./apps/web
     restart: unless-stopped
     ports:
-      - "${WEB_BIND_IP:-127.0.0.1}:${WEB_PORT:-8080}:80"
+      - "${WEB_BIND_IP:-127.0.0.1}:${WEB_PORT:-8443}:443"
+    volumes:
+      - type: bind
+        source: ${TLS_CERT_PATH:?set TLS_CERT_PATH to the server certificate}
+        target: /etc/nginx/tls/server.crt
+        read_only: true
+      - type: bind
+        source: ${TLS_KEY_PATH:?set TLS_KEY_PATH to the server private key}
+        target: /etc/nginx/tls/server.key
+        read_only: true
     depends_on:
       backend:
         condition: service_healthy

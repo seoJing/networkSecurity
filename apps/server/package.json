@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "npm run build && node --test dist/security/sessionPolicy.test.js"
+    "test": "npm run build && node --test dist/security/sessionPolicy.test.js dist/sessionCookie.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

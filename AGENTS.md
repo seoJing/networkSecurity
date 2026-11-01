@@ -25,5 +25,5 @@ Normal login/logout, ownership checks, no raw secrets in logs, reproducible star
 ## Restrictions
 - No testing against real or shared networks or systems; do not run live attack commands outside the explicitly authorized lab.
 - No real user data or reusable credentials. Never commit `.env` files, session cookies, raw captured credentials, or raw packet captures containing secrets.
-- Do not weaken source authentication to simulate session hijacking: the intended initial exposure is **HTTP transport only in the isolated lab**, not intentionally broken authorization.
+- Do not weaken source authentication to simulate session hijacking: the shared platform uses external HTTPS with normal authorization, not intentionally broken authentication or ownership checks.
 - Do not bypass or delete tests to force a green result; do not merge directly into protected `main`.

@@ -59,11 +59,28 @@ jobs:
           cp .env.example .env
           sed -i "s/^SESSION_SECRET=.*/SESSION_SECRET=$(openssl rand -hex 32)/" .env
           sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$(openssl rand -hex 16)/" .env
+          bash scripts/generate-cert.sh local
           echo "SEED_PASSWORD=$(grep '^SEED_PASSWORD=' .env | cut -d= -f2-)" >> "$GITHUB_ENV"
       - name: Build and start services
         run: docker compose up -d --build --wait
+      - name: Wait for verified HTTPS
+        run: |
+          for attempt in {1..30}; do
+            if curl --cacert certs/ca.crt -fsS https://localhost:8443/api/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'HTTPS endpoint did not become ready.' >&2
+          exit 1
       - name: Normal-user smoke test
         run: bash scripts/smoke.sh
+      - name: Confirm HTTP is not served on the published port
+        run: |
+          if curl -fsS --max-time 5 http://127.0.0.1:8443/ > /dev/null 2>&1; then
+            echo 'Application unexpectedly responded over plaintext HTTP.' >&2
+            exit 1
+          fi
       - name: Collect service diagnostics on failure
         if: failure()
         run: docker compose logs --tail=100
